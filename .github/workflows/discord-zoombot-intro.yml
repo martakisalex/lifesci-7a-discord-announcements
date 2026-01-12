@@ -13,7 +13,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          DATA="{\"content\":\"@everyone hello I'm the zoom bot and will remind everyone and provide the zoom links an hour before each meeting\",\"allowed_mentions\":{\"parse\":[\"everyone\"]}}"
+          DATA="{\"content\":\"@everyone Hi! I’m the Zoom Reminder bot. I’ll post Zoom links in this channel 1 hour before each TA session.\",\"allowed_mentions\":{\"parse\":[\"everyone\"]}}"
 
           curl -sS -X POST \
             -H "Content-Type: application/json" \
