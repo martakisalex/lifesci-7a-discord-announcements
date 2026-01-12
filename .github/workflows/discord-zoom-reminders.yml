@@ -1,11 +1,9 @@
 name: Weekly Zoom Reminders (America/Los_Angeles)
 
 on:
-  # Runs every 5 minutes (GitHub’s minimum). We “gate” inside the job to only post at the right LA local times.
   schedule:
     - cron: "*/5 * * * *"
 
-  # Manual test button
   workflow_dispatch:
     inputs:
       slot:
@@ -33,24 +31,23 @@ jobs:
 
           TZ_NAME="America/Los_Angeles"
 
-          # Targets in LA local time:
-          # Friday 4:00 PM
+          # Friday 4:00 PM LA time
           FRI_DOW=5
           FRI_HOUR=16
           FRI_MIN=0
 
-          # Sunday 9:00 AM
+          # Sunday 9:00 AM LA time
           SUN_DOW=7
           SUN_HOUR=9
           SUN_MIN=0
 
-          # If you want “as close to exact as possible”, set WINDOW_MINUTES=1
-          # If you want “don’t miss it if GitHub is a few minutes late”, keep 5
+          # Set to 1 for "as close to exact as possible" (but higher miss risk if GitHub runs late)
+          # Keep 5 if you want to tolerate minor schedule delays
           WINDOW_MINUTES=5
 
-          now_dow=$(TZ="$TZ_NAME" date +%u)   # 1=Mon .. 7=Sun
-          now_hour=$(TZ="$TZ_NAME" date +%H)  # 00..23
-          now_min=$(TZ="$TZ_NAME" date +%M)   # 00..59
+          now_dow=$(TZ="$TZ_NAME" date +%u)
+          now_hour=$(TZ="$TZ_NAME" date +%H)
+          now_min=$(TZ="$TZ_NAME" date +%M)
           iso_week=$(TZ="$TZ_NAME" date +%G-W%V)
 
           echo "LA now: $(TZ="$TZ_NAME" date)"
@@ -61,18 +58,15 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             slot="${{ github.event.inputs.slot }}"
           else
-            # Convert to base-10 to avoid leading-zero issues
             now_hour_num=$((10#$now_hour))
             now_min_num=$((10#$now_min))
 
-            # Friday window
             if [[ "$now_dow" -eq "$FRI_DOW" && "$now_hour_num" -eq "$FRI_HOUR" ]]; then
               if [[ "$now_min_num" -ge "$FRI_MIN" && "$now_min_num" -lt $((FRI_MIN + WINDOW_MINUTES)) ]]; then
                 slot="friday"
               fi
             fi
 
-            # Sunday window
             if [[ -z "$slot" && "$now_dow" -eq "$SUN_DOW" && "$now_hour_num" -eq "$SUN_HOUR" ]]; then
               if [[ "$now_min_num" -ge "$SUN_MIN" && "$now_min_num" -lt $((SUN_MIN + WINDOW_MINUTES)) ]]; then
                 slot="sunday"
@@ -86,8 +80,7 @@ jobs:
         if: steps.gate.outputs.slot == ''
         run: echo "Not a posting time."
 
-      # Dedupe: only post once per slot per ISO week
-      - name: Restore marker for this slot/week
+      - name: Restore marker for this slot/week (dedupe)
         if: steps.gate.outputs.slot != '' && github.event_name != 'workflow_dispatch'
         id: cache
         uses: actions/cache@v4
@@ -106,32 +99,19 @@ jobs:
           set -euo pipefail
 
           if [[ "$SLOT" == "friday" ]]; then
-            CONTENT='@everyone
-TA session starts in 1 hour.
-
-Join Zoom Meeting: https://ucla.zoom.us/j/96088387294?pwd=hESyNROfHJTrjrJKFbJKiFzdkap2uZ.1
-Meeting ID: 960 8838 7294
-Passcode: LS7A'
+            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/96088387294?pwd=hESyNROfHJTrjrJKFbJKiFzdkap2uZ.1\nMeeting ID: 960 8838 7294\nPasscode: LS7A'
           elif [[ "$SLOT" == "sunday" ]]; then
-            CONTENT='@everyone
-TA session starts in 1 hour.
-
-Join Zoom Meeting: https://ucla.zoom.us/j/97578956068?pwd=tnlOHQHlfl4Rc1h2RYQJ3mpctLRGf4.1
-Meeting ID: 975 7895 6068
-Passcode: LS7A'
+            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/97578956068?pwd=tnlOHQHlfl4Rc1h2RYQJ3mpctLRGf4.1\nMeeting ID: 975 7895 6068\nPasscode: LS7A'
           else
             echo "Unknown SLOT: $SLOT"
             exit 1
           fi
 
-          # Build JSON safely (jq is available on ubuntu-latest)
-          PAYLOAD=$(jq -n --arg content "$CONTENT" '{
-            content: $content,
-            allowed_mentions: { parse: ["everyone"] }
-          }')
+          export CONTENT
 
-          echo "Payload:"
-          echo "$PAYLOAD"
+          PAYLOAD=$(python3 -c 'import json,os; print(json.dumps({"content": os.environ["CONTENT"], "allowed_mentions": {"parse": ["everyone"]}}))')
+
+          echo "Payload: $PAYLOAD"
 
           if [[ "${DRY_RUN:-false}" == "true" ]]; then
             echo "Dry run: not sending."
