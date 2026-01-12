@@ -2,12 +2,6 @@ name: One-time Zoom Bot Intro
 
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "If true, prints payload but does not send"
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   post_intro:
@@ -16,29 +10,12 @@ jobs:
       - name: Post intro message to Discord webhook
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DRY_RUN: ${{ github.event.inputs.dry_run }}
-        shell: bash
         run: |
           set -euo pipefail
 
-          payload=$(python3 - <<'PY'
-import json
-content = "@everyone hello I'm the zoom bot and will remind everyone and provide the zoom links an hour before each meeting"
-print(json.dumps({
-  "content": content,
-  "allowed_mentions": {"parse": ["everyone"]}
-}))
-PY
-          )
-
-          echo "Payload: $payload"
-
-          if [[ "${DRY_RUN:-false}" == "true" ]]; then
-            echo "Dry run: not sending."
-            exit 0
-          fi
+          DATA="{\"content\":\"@everyone hello I'm the zoom bot and will remind everyone and provide the zoom links an hour before each meeting\",\"allowed_mentions\":{\"parse\":[\"everyone\"]}}"
 
           curl -sS -X POST \
             -H "Content-Type: application/json" \
-            -d "$payload" \
+            -d "$DATA" \
             "$DISCORD_WEBHOOK_URL"
