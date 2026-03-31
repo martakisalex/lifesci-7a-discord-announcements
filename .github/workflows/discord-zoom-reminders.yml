@@ -31,12 +31,12 @@ jobs:
 
           TZ_NAME="America/Los_Angeles"
 
-          # Friday 4:00 PM LA time
+          # Friday 5:00 PM LA time (for 6:00 PM session)
           FRI_DOW=5
-          FRI_HOUR=16
+          FRI_HOUR=17
           FRI_MIN=0
 
-          # Sunday 9:00 AM LA time
+          # Sunday 9:00 AM LA time (for 10:00 AM session)
           SUN_DOW=7
           SUN_HOUR=9
           SUN_MIN=0
@@ -99,9 +99,9 @@ jobs:
           set -euo pipefail
 
           if [[ "$SLOT" == "friday" ]]; then
-            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/96088387294?pwd=hESyNROfHJTrjrJKFbJKiFzdkap2uZ.1\nMeeting ID: 960 8838 7294\nPasscode: LS7A'
+            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/91352611461?pwd=BPbS9Vz2VAbdUbojCRhgbMeq93urtS.1\nMeeting ID: 913 5261 1461\nPasscode: LS7A'
           elif [[ "$SLOT" == "sunday" ]]; then
-            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/97578956068?pwd=tnlOHQHlfl4Rc1h2RYQJ3mpctLRGf4.1\nMeeting ID: 975 7895 6068\nPasscode: LS7A'
+            CONTENT=$'@everyone\nTA session starts in 1 hour.\n\nJoin Zoom Meeting: https://ucla.zoom.us/j/95750153307?pwd=U66yVKilnI3kwiDCO1BCjBrNura26p.1\nMeeting ID: 957 5015 3307\nPasscode: LS7A'
           else
             echo "Unknown SLOT: $SLOT"
             exit 1
